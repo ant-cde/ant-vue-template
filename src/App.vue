@@ -4,12 +4,12 @@ import {clone} from '@antcde/connect-ts'
 import {onMounted, ref, watch} from 'vue'
 import {injectComms} from './main.ts'
 
-const {toolbar, notepad, context, connect, notifications, appState} = injectComms()
+const {toolbar, notepad, context, connect, notifications, appState} = injectComms() // simple utility for communicating with the OS through your application. Just copy this line into the desired component
 const count = ref(0)
 const sbs = ref<SbsRecord[]>([])
 const tasks = ref<{ id: string, title: string }[]>([])
 
-appState.value = 'test 123'
+appState.value = 'test 123' // you can store state in the URL for later usage.
 
 watch(() => context.value.project, async (project) => {
   if (project?.id) {
@@ -36,15 +36,15 @@ watch(count, count => toolbar.title.value = `Count: ${count}`)
 watch(() => context.value.project, project => console.log({project: JSON.parse(JSON.stringify(project))}))
 
 onMounted(() => {
-  toolbar.title.value = `Test App!`
-  toolbar.menu.value = ['mdi-home-outline', 'mdi-cog-outline'].map((icon, index) => ({
+  toolbar.title.value = `Test App!` // Setting the toolbar title will override the default value
+  toolbar.menu.value = ['mdi-home-outline', 'mdi-cog-outline'].map((icon, index) => ({ // You can set and update menu items any time, including their click listeners.
     icon,
     title: `Item ${index + 1}`,
     onClick: () => console.info(`Item ${index + 1} clicked`),
   }))
 
-  toolbar.search.enabled.value = true
-  toolbar.search.changes.subscribe(console.info)
+  toolbar.search.enabled.value = true // setting this to `true` will show a prompt in the OS's toolbar
+  toolbar.search.changes.subscribe(console.info) // you will receive updates of changes to the value of the prompt. For some reason the ref-way is not working
 })
 
 </script>
