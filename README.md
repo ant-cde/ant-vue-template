@@ -1,7 +1,28 @@
-# Vue 3 + TypeScript + Vite
+# ANT-OS app template
+###### For Vue ✨
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+This example shows how you can create and publish your own app for ANT-OS.
 
-Learn more about the recommended Project Setup and IDE Support in the [Vue Docs TypeScript Guide](https://vuejs.org/guide/typescript/overview.html#project-setup).
+An app is essentially a single-page website. By using ANT's component library, you'll upgrade suche website to be an ANT application. Within the component library is the comms (short for communications) technology, which enables communication between your app, ANT-OS and even the ANT backend.
 
+Check out [main.ts](./src/main.ts) to see a utility that provides a comms instance and [App.vue](./src/App.vue:7) to see it used in action.
 
+- Through `comms.context` you can [watch and receive](./src/App.vue:36) important changes from the OS, like changes in Project, License and/or User. 
+- The `comms.connect` property is the API that enables the ANT system. You can use it as well as the OS itself.
+- With `comms.toolbar`, `comms.notepad` and `comms.notifications`, you get partial access to the those respective OS components. Add your custom menu to the upper toolbar, open the Notepad in a specific Task or send a notification.
+
+In upcoming update, you'll get access to current locale and darkmode-state.
+
+## Getting started
+
+Run you favorite `pnpm install` and run the `dev` command from the `package.json`. This will launch the app on localhost port [5174](http://localhost:5174). Now you'll be able to see the app without the connection to ANT OS. 
+
+Next step is the head over to [ANT OS](https://os.antcde.io/) and login. After logging in you can append `https://os.antcde.io/apps-test/5174` where 5174 represents the port on which the sample app is running. 
+
+NOTE: some functionality is reflected in the console only.
+
+## Publishing
+By running the `build` command, you'll build a single page app that is ready for publishing. Head over to [ANT](https://os.antcde.io) and open the [ANT app store](https://os.antcde.io/apps/1). Here you can create or update your app by uploading the freshly created zip (usually found in the dist dir). 
+
+## app-config.json
+If the app requires any initialization on the server, it can be defined within this file. In here you can define the tables you'll need within you app. 

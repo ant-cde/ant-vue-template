@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import type { NotepadVisibility, SbsRecord } from '@antcde/connect-ts'
-import { clone } from '@antcde/connect-ts'
-import { onMounted, ref, watch } from 'vue'
-import { injectComms } from './main.ts'
+import type {NotepadVisibility, SbsRecord} from '@antcde/connect-ts'
+import {clone} from '@antcde/connect-ts'
+import {onMounted, ref, watch} from 'vue'
+import {injectComms} from './main.ts'
 
-const { toolbar, notepad, context, connect, notifications, appState } = injectComms()
+const {toolbar, notepad, context, connect, notifications, appState} = injectComms()
 const count = ref(0)
 const sbs = ref<SbsRecord[]>([])
 const tasks = ref<{ id: string, title: string }[]>([])
@@ -33,94 +33,53 @@ watch(() => context.value.license, async (license) => {
 
 watch(count, count => toolbar.title.value = `Count: ${count}`)
 
-watch(() => context.value.project, project => console.log({ project: JSON.parse(JSON.stringify(project)) }))
-
-const search = ref('')
+watch(() => context.value.project, project => console.log({project: JSON.parse(JSON.stringify(project))}))
 
 onMounted(() => {
   toolbar.title.value = `Test App!`
   toolbar.menu.value = ['mdi-home-outline', 'mdi-cog-outline'].map((icon, index) => ({
     icon,
     title: `Item ${index + 1}`,
-    onClick: () => console.debug(`Item ${index + 1} clicked`),
+    onClick: () => console.info(`Item ${index + 1} clicked`),
   }))
 
   toolbar.search.enabled.value = true
   toolbar.search.changes.subscribe(console.info)
 })
 
-function showTab(e: Event) {
-  const target = e.target as HTMLSelectElement
-  const value = target?.value as NotepadVisibility
-
-  notepad.show(value)
-}
-
-function showTask(e: Event) {
-  const target = e.target as HTMLSelectElement
-  const id = target?.value
-
-  return notepad.showTask({ id })
-}
-
-function selectSbs(e: Event) {
-  const target = e.target as HTMLSelectElement
-  const code = target?.value
-
-  notepad.selectSbs({ code })
-}
-
-function showNotepad() {
-  notepad.show()
-}
-
-function hideNotepad() {
-  notepad.hide()
-}
 </script>
 
 <template>
-  <div :style="{ padding: '50px' }">
+  <v-app class="pa-8">
     <h1>Test app!</h1>
-    <button @click="notifications.success('This is amazing!')">
-      Send notification
-    </button>
-    <button type="button" @click="count++">
-      count is {{ count }}
-    </button>
+    <v-btn-group divided variant="outlined">
+      <v-btn @click="notifications.success('This is amazing!')" text="Send notification"/>
+      <v-btn type="button" @click="count++">count is {{ count }}</v-btn>
+    </v-btn-group>
 
-    <h2>Search</h2>
 
-    {{ search }}
-
+    <v-form>
     <h2>Select SBS</h2>
-
-    <select @change="selectSbs">
-      <option v-for="item in sbs" :key="item.id" :value="item.code">
-        {{ item.code }}
-      </option>
-    </select>
+      <v-select
+          :items="sbs"
+          :item-props="value => ({value, title: value.code})"
+          @update:model-value="notepad.selectSbs"
+      />
 
     <h2>Select Task</h2>
-
-    <select @input="showTask">
-      <option v-for="task in tasks" :key="task.id" :value="task.id">
-        {{ task.title }}
-      </option>
-    </select>
+      <v-select
+          :items="tasks"
+          :item-props="value => ({value, ...value})"
+          @update:model-value="notepad.showTask"
+      />
 
     <h2>Notepad</h2>
-
-    <select @change="showTab">
-      <option v-for="item in ['task', 'apps', 'tasks', 'sbs']" :key="item" :value="item">
-        {{ item }}
-      </option>
-    </select>
-    <button type="button" @click="showNotepad">
-      Open
-    </button>
-    <button type="button" @click="hideNotepad">
-      Close
-    </button>
-  </div>
+      <v-select
+          clearable
+          :items="['task', 'apps', 'tasks', 'sbs'] as NotepadVisibility[]"
+          @update:model-value="item => notepad.show(item ?? undefined)"
+          @click:clear="notepad.hide"
+      />
+    </v-form>
+  </v-app>
 </template>

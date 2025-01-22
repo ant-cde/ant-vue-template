@@ -1,12 +1,14 @@
-import { useCommsInjection } from '@antcde/ant-component-library'
-import { createApp } from 'vue'
+import AntComponentLibrary, {useCommsInjection} from '@antcde/ant-component-library'
+import {createApp} from 'vue'
 import App from './App.vue'
-import './style.css'
+import {vuetify} from './plugins/vuetify.ts'
 
-const { injectComms, provideComms } = useCommsInjection()
-
-export { injectComms }
+const {injectComms, provideComms} = useCommsInjection()
 
 createApp(App)
-  .use(provideComms)
-  .mount('#app-1')
+    .use(vuetify)
+    .use(AntComponentLibrary)
+    .use(provideComms)
+    .mount('#app-1')
+
+export {injectComms}
