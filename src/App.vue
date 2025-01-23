@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type {NotepadVisibility, SbsRecord} from '@antcde/connect-ts'
+import type {Context, Notepad, NotepadVisibility, SbsRecord, Toolbar} from '@antcde/connect-ts'
 import {clone} from '@antcde/connect-ts'
 import {onMounted, ref, watch} from 'vue'
 import {injectComms} from './main.ts'

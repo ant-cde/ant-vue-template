@@ -17,7 +17,7 @@ In upcoming update, you'll get access to current locale and darkmode-state.
 
 ## Getting started
 
-Run you favorite `pnpm install` and run the `dev` command from the `package.json`. This will launch the app on localhost port [5174](http://localhost:5174). Now you'll be able to see the app without the connection to ANT OS. 
+Run your favorite `pnpm install` and run the `dev` command from the `package.json`. This will launch the app on localhost port [5174](http://localhost:5174). Now you'll be able to see the app without the connection to ANT OS. 
 
 Next step is the head over to [ANT OS](https://os.antcde.io/) and login. After logging in you can append `https://os.antcde.io/apps-test/5174` where 5174 represents the port on which the sample app is running. 
 
