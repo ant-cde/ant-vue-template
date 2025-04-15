@@ -1,4 +1,4 @@
-import AntComponentLibrary, {useCommsInjection} from '@antcde/ant-component-library'
+import AntComponentLibrary, {useCommsInjection} from '@antcde/component-library'
 import {createApp} from 'vue'
 import App from './App.vue'
 import {vuetify} from './plugins/vuetify.ts'

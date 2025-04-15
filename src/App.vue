@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import type {Context, Notepad, NotepadVisibility, SbsRecord, Toolbar} from '@antcde/connect-ts'
-import {clone} from '@antcde/connect-ts'
-import {onMounted, ref, watch} from 'vue'
+import type {NotepadVisibility, SbsRecord} from '@antcde/connect-ts'
+import {onMounted, onUnmounted, ref, watch} from 'vue'
 import {injectComms} from './main.ts'
+import {objectPick} from '@vueuse/core/index.cjs';
+import * as qs from 'qs'
 
-const {toolbar, notepad, context, connect, notifications, appState} = injectComms() // simple utility for communicating with the OS through your application. Just copy this line into the desired component
+const {toolbar, notepad, context, connect, notifications, appState, signal} = injectComms() // simple utility for communicating with the OS through your application. Just copy this line into the desired component
 const count = ref(0)
 const sbs = ref<SbsRecord[]>([])
 const tasks = ref<{ id: string, title: string }[]>([])
@@ -22,12 +23,9 @@ watch(() => context.value.project, async (project) => {
 
 watch(() => context.value.license, async (license) => {
   if (license) {
-    const task = context.value.task
-    if (task) {
-      const t = await connect.tasks.getV2Task(task.id).then(e => e.data)
-      tasks.value = [t, t, t]
-      console.log('tasks', t, clone(tasks.value))
-    }
+    tasks.value = await connect.tasks
+        .getV2Tasks(license.id, qs.stringify({per_page: 3}))
+        .then(e => e.data.map(t => objectPick(t, ['id', 'title'])))
   }
 })
 
@@ -43,10 +41,23 @@ onMounted(() => {
     onClick: () => console.info(`Item ${index + 1} clicked`),
   }))
 
-  toolbar.search.enabled.value = true // setting this to `true` will show a prompt in the OS's toolbar
-  toolbar.search.changes.subscribe(console.info) // you will receive updates of changes to the value of the prompt. For some reason the ref-way is not working
+  toolbar.searchEnabled.value = true // setting this to `true` will show a prompt in the OS's toolbar
 })
 
+watch(toolbar.search, console.info) // you will receive updates of changes to the value of the prompt. For some reason the ref-way is not working
+
+let unsubscribeSignal: (() => void) | undefined
+
+const query = ref<string>('')
+
+onMounted(() => unsubscribeSignal = signal.receive((s) => {
+  if (s.route?.query) {
+    console.log(s.route.query)
+    query.value = JSON.stringify(s.route.query)
+  }
+}))
+
+onUnmounted(() => unsubscribeSignal?.())
 </script>
 
 <template>
@@ -57,28 +68,42 @@ onMounted(() => {
       <v-btn type="button" @click="count++">count is {{ count }}</v-btn>
     </v-btn-group>
 
+    <h2>Search</h2>
+    {{ toolbar.search }}
+
+    <h2>query params</h2>
+    {{ query }}
+
+
 
     <v-form>
     <h2>Select SBS</h2>
       <v-select
           :items="sbs"
-          :item-props="value => ({value, title: value.code})"
+          :item-props="value => ({...value, value: value.id, title: value.code})"
           @update:model-value="notepad.selectSbs"
       />
 
     <h2>Select Task</h2>
       <v-select
           :items="tasks"
-          :item-props="value => ({value, ...value})"
+          :item-props="(value, i) => ({ ...value, value: value.id + i })"
           @update:model-value="notepad.showTask"
       />
 
-    <h2>Notepad</h2>
+      <h2>Notepad</h2>
       <v-select
           clearable
           :items="['task', 'apps', 'tasks', 'sbs'] as NotepadVisibility[]"
           @update:model-value="item => notepad.show(item ?? undefined)"
           @click:clear="notepad.hide"
+      />
+
+      <h2>Overlay</h2>
+      <v-select
+          :items="tasks"
+          :item-props="value => ({ ...value, value: value.id })"
+          @update:model-value="({ id}) => signal({overlay: {action: {id}}})"
       />
     </v-form>
   </v-app>
