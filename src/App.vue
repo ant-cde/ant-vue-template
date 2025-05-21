@@ -1,16 +1,28 @@
 <script setup lang="ts">
 import type {NotepadVisibility, SbsRecord} from '@antcde/connect-ts'
 import {onMounted, onUnmounted, ref, watch} from 'vue'
-import {injectComms} from './main.ts'
 import {objectPick} from '@vueuse/core/index.cjs';
 import * as qs from 'qs'
+import {injectContext} from "./main.ts";
+import {useTheme} from "vuetify";
+import {useAntColorMode} from "@antcde/vue-utils";
 
-const {toolbar, notepad, context, connect, notifications, appState, signal} = injectComms() // simple utility for communicating with the OS through your application. Just copy this line into the desired component
+const {comms} = injectContext()
+const colorMode = useAntColorMode(comms)
+const {toolbar, notepad, context, connect, notifications, appState, signal} = comms// simple utility for communicating with the OS through your application. Just copy this line into the desired component
 const count = ref(0)
 const sbs = ref<SbsRecord[]>([])
 const tasks = ref<{ id: string, title: string }[]>([])
 
 appState.value = 'test 123' // you can store state in the URL for later usage.
+
+const theme = useTheme();
+
+watch(
+    colorMode.isDark,
+    isDark => theme.global.name.value = isDark ? 'dark' : 'light',
+    {immediate: true}
+)
 
 watch(() => context.value.project, async (project) => {
   if (project?.id) {
@@ -31,80 +43,98 @@ watch(() => context.value.license, async (license) => {
 
 watch(count, count => toolbar.title.value = `Count: ${count}`)
 
-watch(() => context.value.project, project => console.log({project: JSON.parse(JSON.stringify(project))}))
-
 onMounted(() => {
   toolbar.title.value = `Test App!` // Setting the toolbar title will override the default value
   toolbar.menu.value = ['mdi-home-outline', 'mdi-cog-outline'].map((icon, index) => ({ // You can set and update menu items any time, including their click listeners.
     icon,
     title: `Item ${index + 1}`,
-    onClick: () => console.info(`Item ${index + 1} clicked`),
+    onClick: () => comms.notifications.info(`Item ${index + 1} clicked`),
   }))
 
   toolbar.searchEnabled.value = true // setting this to `true` will show a prompt in the OS's toolbar
 })
-
-watch(toolbar.search, console.info) // you will receive updates of changes to the value of the prompt. For some reason the ref-way is not working
 
 let unsubscribeSignal: (() => void) | undefined
 
 const query = ref<string>('')
 
 onMounted(() => unsubscribeSignal = signal.receive((s) => {
-  if (s.route?.query) {
-    console.log(s.route.query)
-    query.value = JSON.stringify(s.route.query)
-  }
+  if (s.route?.query) query.value = JSON.stringify(s.route.query)
 }))
 
 onUnmounted(() => unsubscribeSignal?.())
+
+const navigation = [
+  {title: 'Dashboard', subtitle: 'OS.dash'},
+  {title: 'Login', subtitle: 'OS.login'},
+  {title: 'Profile', subtitle: 'OS.profile'},
+  {title: 'ANT OS Store', subtitle: 'store'},
+]
 </script>
 
 <template>
   <v-app class="pa-8">
-    <h1>Test app!</h1>
+    <h3>Test app!</h3>
+    <p>Run your app and go to <a href="os.antcde.io/developer">ANT OS developer page</a>. By default it shows the app
+      hosted on port 5174, but you can change it by going to /developer/:port.</p>
     <v-btn-group divided variant="outlined">
       <v-btn @click="notifications.success('This is amazing!')" text="Send notification"/>
       <v-btn type="button" @click="count++">count is {{ count }}</v-btn>
     </v-btn-group>
 
-    <h2>Search</h2>
-    {{ toolbar.search }}
+    <h4>Search</h4>
+    <p>Type in the toolbar to receive the search input</p>
+    <code>{{ toolbar.search }}</code>
 
-    <h2>query params</h2>
-    {{ query }}
-
-
+    <h4>query params</h4>
+    <p>Change the query params in the URL to receive them in the app</p>
+    <code>{{ query }}</code>
 
     <v-form>
-    <h2>Select SBS</h2>
+      <h4>Select SBS</h4>
+      <p>Select an SBS item to be shown and highlighted in the notepad</p>
       <v-select
+          density="compact"
           :items="sbs"
-          :item-props="value => ({...value, value: value.id, title: value.code})"
-          @update:model-value="notepad.selectSbs"
+          :item-props="item => ({...item, value: item.code, title: item.code})"
+          @update:model-value="code => notepad.show('sbs').then(() => notepad.selectSbs({ code }))"
       />
 
-    <h2>Select Task</h2>
+      <h4>Select Task</h4>
+      <p>Select a task to be shown in the notepad</p>
       <v-select
+          density="compact"
           :items="tasks"
-          :item-props="(value, i) => ({ ...value, value: value.id + i })"
-          @update:model-value="notepad.showTask"
+          :item-props="(task) => ({ ...task, value: task.id  })"
+          @update:model-value="id => notepad.showTask({ id })"
       />
 
-      <h2>Notepad</h2>
+      <h4>Notepad</h4>
+      <p>Open a certain tab in the notepad</p>
       <v-select
+          density="compact"
           clearable
           :items="['task', 'apps', 'tasks', 'sbs'] as NotepadVisibility[]"
           @update:model-value="item => notepad.show(item ?? undefined)"
           @click:clear="notepad.hide"
       />
 
-      <h2>Overlay</h2>
+      <h4>Overlay</h4>
+      <p>Show the task as a workflow</p>
       <v-select
+          density="compact"
           :items="tasks"
-          :item-props="value => ({ ...value, value: value.id })"
-          @update:model-value="({ id}) => signal({overlay: {action: {id}}})"
+          :item-props="item => ({ ...item, value: item.id })"
+          @update:model-value="(id) => signal({overlay: {action: {id}}})"
       />
+
+      <h4>Navigate to</h4>
+      <p>Open a specific page or other app through an app</p>
+      <v-select
+          density="compact"
+          :items="navigation"
+          :item-props="item => ({ ...item, value: item.subtitle })"
+          @update:model-value="to => comms.signal({navigate: {to}})"/>
     </v-form>
   </v-app>
 </template>
