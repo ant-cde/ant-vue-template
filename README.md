@@ -1,3 +1,7 @@
+# ⚠️ MOOOOOVED 🐄
+
+Up-to-date version can be found [here](https://github.com/ANTCDE/vue-template).
+
 # ANT-OS app template
 ###### For Vue ✨
 
